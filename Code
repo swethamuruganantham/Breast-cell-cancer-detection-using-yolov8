@@ -1,0 +1,78 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from ultralytics import YOLO
+from PIL import Image, ImageTk
+import cv2
+import numpy as np
+
+# Load the YOLO model
+model = YOLO("yolov8n.pt")
+
+# Function to browse and classify image
+def browse_image():
+    filename = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg;*.jpeg;*.png")])
+    if filename:
+        classify_image(filename)
+
+def classify_image(image_path):
+    # Run the prediction with a lower confidence threshold
+    result = model.predict(source=image_path, show=False, conf=0.2)
+
+    # Load the original image
+    original_image = cv2.imread(image_path)
+    output_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
+    
+    # Check if any objects are detected
+    if len(result[0].boxes) > 0:
+        # Draw bounding boxes on the output image for detected objects
+        for box in result[0].boxes:
+            xyxy = box.xyxy[0]
+            cv2.rectangle(output_image, 
+                          (int(xyxy[0]), int(xyxy[1])), 
+                          (int(xyxy[2]), int(xyxy[3])), 
+                          (255, 0, 0), 2)  # Blue box for affected
+        
+        # Set "affected" label in red
+        result_text = "Affected: Detected abnormalities"
+        result_display.config(text=result_text, fg="red")
+    else:
+        # No objects detected, consider it "normal"
+        result_text = "Normal: No abnormalities detected"
+        result_display.config(text=result_text, fg="green")
+
+    # Display result image with or without bounding boxes
+    img = Image.fromarray(output_image)
+    img_tk = ImageTk.PhotoImage(img)
+    result_label.config(image=img_tk)
+    result_label.image = img_tk
+
+# Create the main window
+root = tk.Tk()
+#root.title("BREAST CELL CANCER DETECTION")
+root.title("Image Classifier")
+root.geometry("800x700")
+
+# Set a gradient-like background using color combinations
+root.configure(bg='#ADD8E6')  # Light blue background
+
+# Create a colorful header
+header = tk.Frame(root, bg="#FFC0CB")  # Light pink header
+header.pack(fill=tk.X)
+header_label = tk.Label(header, text="BREAST CELL CANCER DETECTION", font=("Arial", 24), fg="white", bg="#FFC0CB")
+#header_label = tk.Label(header, text="Image Classifier", font=("Arial", 24), fg="white", bg="#FFC0CB")
+header_label.pack(pady=10)
+
+# Create a button to browse images
+browse_button = tk.Button(root, text="Browse Image", command=browse_image, font=("Arial", 14), bg="#2196F3", fg="white")
+browse_button.pack(pady=20)
+
+# Result display area for image
+result_label = tk.Label(root, bg="#f0f0f0", width=600, height=400)
+result_label.pack(pady=10)
+
+# Result text area for "Affected" or "Normal"
+result_display = tk.Label(root, text="", font=("Arial", 16), bg="#ADD8E6")
+result_display.pack(pady=20)
+
+# Run the application
+root.mainloop()
