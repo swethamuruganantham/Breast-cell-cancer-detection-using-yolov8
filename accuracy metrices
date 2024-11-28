@@ -1,0 +1,21 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from ultralytics import YOLO
+from PIL import Image, ImageTk
+import cv2
+import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+import matplotlib.pyplot as plt
+
+# Load the YOLOv8 model
+model = YOLO("yolov8n.pt")  # You can switch to yolov8m.pt for a more accurate model
+
+# Function to browse and classify image
+def browse_image():
+    filename = filedialog.askopenfilename(filetypes=[("Image files", ".jpg;.jpeg;*.png")])
+    if filename:
+        classify_image(filename)
+
+def classify_image(image_path):
+    # Run the prediction without saving output files
+    result = model.predict(source=image_path, show=False, save=False, conf=0.2)  # save=False to avo…
